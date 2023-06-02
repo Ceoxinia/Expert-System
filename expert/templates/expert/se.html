@@ -1,0 +1,123 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Inferred Facts</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+   <style>
+      body {
+         padding-top: 70px;
+         padding-left:50px;
+         background-color: rgba(248, 249, 250, 0.5); /* Added opacity */
+         background-image:url(../../static/assets/bg.jpg);
+         background-size:cover;
+     }
+     
+     .navbar {
+         background-color: #343a40;
+     }
+     .btn-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+         grid-gap: 10px;
+         margin-bottom: 30px;
+     }
+     
+     input[type="submit"] {
+         background-color: #343a40;
+         color: #fff;
+         border-color: #343a40;
+     }
+     input[type="submit"]:hover {
+         background-color: #23272b;
+         border-color: #23272b;
+     }
+     
+     .container {
+         margin: 0 auto;
+         
+     }
+     
+     .container .col {
+         background-color: white;
+         margin: 0 1em;
+         padding: 1em;
+         border-radius: 80px; /* Rounded edges */
+     }
+   </style>
+</head>
+<body>
+   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+      <div class="container">
+         <a class="navbar-brand" href="#">Expert System</a>
+      </div>
+   </nav>
+
+   <div class="container row align-items-start">
+      <div class="col bg-white">
+         <form method="POST" id="factForm">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Infer Facts">
+         </form>
+      </div>
+
+      <div class="col align-self-center bg-white" id="results">
+         {% for fact in inferred_facts %}
+            <h1>{{ fact }}</h1>
+         {% endfor %}
+      </div>
+   </div>
+
+   <script>
+      $(document).ready(function () {
+         $('.fact-btn').click(function() {
+            $(this).toggleClass('active');
+         });
+
+         $('form').on('submit', function (event) {
+            event.preventDefault();
+
+            $.ajax({
+               url : "", // the endpoint, same URL as Django view
+               type : "POST", // http method
+               data : $(this).serialize(), // data sent with the post request, the form data from the HTML form
+
+               // handle a successful response
+               success : function(json) {
+                  console.log("AJAX call was successful.");
+                  console.log(json); // log the returned json to the console
+              
+                  $(".fact-btn").removeClass('active');
+                  for (let i = 0; i < json.facts.length; i++) {
+                      let fact = json.facts[i];
+                      let btn = $(".fact-btn:contains('" + fact + "')");
+                      btn.addClass('active');
+                  }
+                  
+                  // update "Results:" section
+                  let resultsDiv = '<h2>Results:</h2><div>';
+                  for (let i = 0; i < json.facts.length; i++) {
+                      resultsDiv += '<h1>' + json.facts[i] + '</h1>';
+                  }
+                  resultsDiv += '</div>';
+                  // update only the #results div, not the whole container
+                  $("#results").html(resultsDiv);
+              },
+
+               // handle a non-successful response
+               error : function(xhr,errmsg,err) {
+                  console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+               }
+            });
+         });
+      });
+   </script>
+
+
+</body>
+</html>
